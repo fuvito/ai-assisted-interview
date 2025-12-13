@@ -1,0 +1,27 @@
+{
+  "name": "ai-assisted-interview",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "workspaces": ["server", "client-ui", "admin-ui", "shared"],
+  "scripts": {
+    "build": "npm -ws run build --if-present",
+    "dev:shared": "npm -w shared run dev",
+    "dev:server": "npm -w server run dev",
+    "dev:client": "npm -w client-ui run dev",
+    "dev:admin": "npm -w admin-ui run dev",
+    "dev": "start \"shared\" cmd /k npm run dev:shared && start \"server\" cmd /k npm run dev:server && start \"client-ui\" cmd /k npm run dev:client && start \"admin-ui\" cmd /k npm run dev:admin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fuvito/ai-assisted-interview.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/fuvito/ai-assisted-interview/issues"
+  },
+  "homepage": "https://github.com/fuvito/ai-assisted-interview#readme"
+}
