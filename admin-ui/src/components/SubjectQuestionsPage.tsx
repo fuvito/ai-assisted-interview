@@ -19,6 +19,7 @@ import {
   TableBody,
   TableCell,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   Typography,
@@ -75,6 +76,10 @@ export function SubjectQuestionsPage() {
   const [state, setState] = useState<LoadState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
+
+  const [searchText, setSearchText] = useState('')
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
 
   const [editDialog, setEditDialog] = useState<EditDialogState>({
     open: false,
@@ -133,6 +138,28 @@ export function SubjectQuestionsPage() {
   useEffect(() => {
     loadQuestions()
   }, [loadQuestions])
+
+  const filtered = useMemo(() => {
+    const q = searchText.trim().toLowerCase()
+    if (!q) return questions
+
+    return questions.filter((item) => {
+      return (
+        item.id.toLowerCase().includes(q) ||
+        item.questionText.toLowerCase().includes(q) ||
+        item.expertAnswer.toLowerCase().includes(q)
+      )
+    })
+  }, [questions, searchText])
+
+  useEffect(() => {
+    setPage(0)
+  }, [searchText, subjectId])
+
+  const paged = useMemo(() => {
+    const start = page * rowsPerPage
+    return filtered.slice(start, start + rowsPerPage)
+  }, [filtered, page, rowsPerPage])
 
   function openCreate() {
     setEditDialog({ open: true, mode: 'create', questionId: null, questionText: '', expertAnswer: '' })
@@ -256,10 +283,20 @@ export function SubjectQuestionsPage() {
                 Total
               </Typography>
               <Typography variant="h6" fontWeight={800}>
-                {questions.length}
+                {filtered.length}
               </Typography>
               {state === 'loading' && <CircularProgress size={18} />}
             </Box>
+
+            <TextField
+              label="Search"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search question text, answer, or id"
+              fullWidth
+              disabled={state === 'loading'}
+              sx={{ mb: 2 }}
+            />
 
             <Divider sx={{ mb: 2 }} />
 
@@ -274,7 +311,7 @@ export function SubjectQuestionsPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {questions.map((q) => (
+                  {paged.map((q) => (
                     <TableRow key={q.id} hover>
                       <TableCell>
                         <Typography variant="subtitle2" fontWeight={800}>
@@ -294,17 +331,30 @@ export function SubjectQuestionsPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {questions.length === 0 && state !== 'loading' && (
+                  {filtered.length === 0 && state !== 'loading' && (
                     <TableRow>
                       <TableCell colSpan={2}>
                         <Typography variant="body2" color="text.secondary">
-                          No questions yet for this subject.
+                          No questions match your filter.
                         </Typography>
                       </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
+
+              <TablePagination
+                component="div"
+                count={filtered.length}
+                page={page}
+                onPageChange={(_e, next) => setPage(next)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(Number(e.target.value))
+                  setPage(0)
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+              />
             </Card>
           </CardContent>
         </Card>
