@@ -50,12 +50,18 @@ create table if not exists public.interview_answers (
   question_id uuid not null references public.questions(id) on delete restrict,
 
   answer_text text not null,
-  score int not null check (score >= 0 and score <= 100),
+  score int not null check (score >= 0 and score <= 10),
   feedback text not null,
 
   created_at timestamptz not null default now(),
   unique (interview_id, question_id)
 );
+
+alter table public.interview_answers
+  drop constraint if exists interview_answers_score_check;
+
+alter table public.interview_answers
+  add constraint interview_answers_score_check check (score >= 0 and score <= 10);
 
 create index if not exists idx_interview_answers_interview_id on public.interview_answers(interview_id);
 create index if not exists idx_interview_answers_question_id on public.interview_answers(question_id);
