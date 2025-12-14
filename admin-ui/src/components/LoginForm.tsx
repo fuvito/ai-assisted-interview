@@ -14,19 +14,19 @@ export function LoginForm(props: Props) {
   const { email, password, busy, error, onEmailChange, onPasswordChange, onSubmit } = props
 
   return (
-    <Container maxWidth="sm" sx={{ py: 6 }}>
-      <Card variant="outlined">
+    <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
+      <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2.5, sm: 3 }, bgcolor: 'background.default' }}>
+          <Typography variant="h5" fontWeight={800}>
+            Admin login
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Sign in with a Supabase Auth admin account.
+          </Typography>
+        </Box>
+
         <CardContent>
           <Stack spacing={2}>
-            <Box>
-              <Typography variant="h5" fontWeight={800}>
-                Admin Login
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Sign in with a Supabase Auth admin account.
-              </Typography>
-            </Box>
-
             {error && <Alert severity="error">{error}</Alert>}
 
             <TextField

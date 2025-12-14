@@ -160,18 +160,18 @@ export function QuestionsPage() {
   }
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Stack spacing={2}>
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            Questions
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            CRUD questions and expert answers.
-          </Typography>
-        </Box>
+    <Container maxWidth="md" sx={{ py: { xs: 4, sm: 6 } }}>
+      <Stack spacing={2.5}>
+        <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+          <Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2.5, sm: 3 }, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+            <Typography variant="h4" fontWeight={900}>
+              Questions
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+              Manage question prompts and expert answers.
+            </Typography>
+          </Box>
 
-        <Card variant="outlined">
           <CardContent>
             <Stack spacing={2}>
               <FormControl fullWidth>
@@ -200,10 +200,10 @@ export function QuestionsPage() {
           </CardContent>
         </Card>
 
-        <Card variant="outlined">
+        <Card variant="outlined" sx={{ boxShadow: 'none' }}>
           <CardContent>
             <Stack spacing={2}>
-              <Typography variant="h6" fontWeight={700}>
+              <Typography variant="h6" fontWeight={800}>
                 Editor
               </Typography>
 
