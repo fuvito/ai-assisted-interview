@@ -27,7 +27,16 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     if (res.status === 401) await supabase.auth.signOut()
     const text = await res.text()
-    throw new Error(text || `Request failed (${res.status})`)
+
+    let message: string | null = null
+    try {
+      const parsed = JSON.parse(text) as { error?: unknown }
+      message = typeof parsed.error === 'string' ? parsed.error : null
+    } catch {
+      message = null
+    }
+
+    throw new Error(message || text || `Request failed (${res.status})`)
   }
   return (await res.json()) as T
 }
