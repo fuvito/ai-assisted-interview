@@ -6,7 +6,8 @@ import { Account } from './components/Account'
 import { AppLayout } from './components/AppLayout'
 import { Home } from './components/Home'
 import { LoginPage } from './components/LoginPage'
-import { QuestionsPage } from './components/QuestionsPage'
+import { QuestionsHomePage } from './components/QuestionsHomePage'
+import { SubjectQuestionsPage } from './components/SubjectQuestionsPage'
 import { SubjectsPage } from './components/SubjectsPage'
 import { RequireAuth } from './components/RequireAuth'
 
@@ -23,7 +24,8 @@ function AppRoutes() {
         <Route path="/login" element={accessToken ? <Navigate to="/questions" replace /> : <LoginPage />} />
 
         <Route element={<RequireAuth />}>
-          <Route path="/questions" element={<QuestionsPage />} />
+          <Route path="/questions" element={<QuestionsHomePage />} />
+          <Route path="/questions/:subjectId" element={<SubjectQuestionsPage />} />
           <Route path="/subjects" element={<SubjectsPage />} />
           <Route path="/account" element={<Account />} />
         </Route>
