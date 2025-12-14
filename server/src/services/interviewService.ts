@@ -12,6 +12,7 @@ import {
   createInterview,
   getInterview,
   getInterviewQuestionIdAt,
+  reserveDailyQuestions,
   saveInterviewAnswer,
   setInterviewQuestions,
   updateInterviewProgress,
@@ -61,20 +62,37 @@ export function parseStartInterviewRequest(raw: unknown): StartInterviewRequest 
   return { subjectId, questionCount };
 }
 
-export async function startInterview(req: StartInterviewRequest): Promise<StartInterviewResponse> {
-  const allQuestions = await listQuestionsBySubject(req.subjectId);
+function getDailyQuestionLimit(): number {
+  const raw = process.env.DAILY_QUESTION_LIMIT;
+  const parsed = raw ? Number(raw) : 20;
+  if (!Number.isFinite(parsed) || parsed <= 0) return 20;
+  return Math.floor(parsed);
+}
+
+export async function startInterview(params: { req: StartInterviewRequest; userId: string }): Promise<StartInterviewResponse> {
+  const limit = getDailyQuestionLimit();
+
+  const allQuestions = await listQuestionsBySubject(params.req.subjectId);
   if (allQuestions.length === 0) {
     throw httpError(400, "No questions available for this subject");
   }
 
-  const desiredCount = req.questionCount ?? 5;
+  const desiredCount = params.req.questionCount ?? 5;
   const count = Math.max(1, Math.min(desiredCount, allQuestions.length));
+
+  const quota = await reserveDailyQuestions({ userId: params.userId, count, limit });
+  if (!quota.allowed) {
+    throw httpError(
+      429,
+      `Daily question limit reached. Remaining today: ${quota.remaining} of ${quota.quotaLimit}.`,
+    );
+  }
 
   const pool = [...allQuestions];
   shuffleInPlace(pool);
   const selected = pool.slice(0, count);
 
-  const interview = await createInterview(req.subjectId, count);
+  const interview = await createInterview(params.req.subjectId, count);
   await setInterviewQuestions(
     interview.id,
     selected.map((q) => q.id)

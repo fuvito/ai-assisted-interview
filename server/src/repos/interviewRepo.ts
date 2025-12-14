@@ -77,6 +77,37 @@ export async function setInterviewQuestions(interviewId: string, questionIds: st
   if (error) throw httpError(500, error.message);
 }
 
+export async function reserveDailyQuestions(params: {
+  userId: string;
+  count: number;
+  limit: number;
+}): Promise<{ allowed: boolean; used: number; remaining: number; quotaLimit: number }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw httpError(500, "Missing SUPABASE_URL and SUPABASE_KEY");
+
+  const { data, error } = await supabase.rpc("reserve_daily_questions", {
+    p_user_id: params.userId,
+    p_count: params.count,
+    p_limit: params.limit,
+  });
+
+  if (error) throw httpError(500, error.message);
+
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { allowed?: unknown; used?: unknown; remaining?: unknown; quota_limit?: unknown }
+    | null
+    | undefined;
+
+  if (!row) throw httpError(500, "Failed to reserve daily quota");
+
+  return {
+    allowed: Boolean(row.allowed),
+    used: Number(row.used ?? 0),
+    remaining: Number(row.remaining ?? 0),
+    quotaLimit: Number(row.quota_limit ?? params.limit),
+  };
+}
+
 export async function listInterviewQuestionIds(interviewId: string): Promise<Array<{ position: number; questionId: string }>> {
   const supabase = getSupabaseClient();
   if (!supabase) throw httpError(500, "Missing SUPABASE_URL and SUPABASE_KEY");

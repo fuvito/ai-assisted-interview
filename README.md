@@ -52,6 +52,9 @@ SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY
 GEMINI_MODEL=gemini-2.5-flash-lite
 
+# Optional: daily per-user quota (questions reserved at interview start, UTC day)
+DAILY_QUESTION_LIMIT=20
+
 # Optional
 PORT=3001
 ```

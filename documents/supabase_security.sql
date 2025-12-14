@@ -78,4 +78,9 @@ alter table public.interviews enable row level security;
 alter table public.interview_questions enable row level security;
 alter table public.interview_answers enable row level security;
 
+alter table public.user_daily_quota enable row level security;
+
+revoke execute on function public.reserve_daily_questions(uuid, int, int) from public;
+grant execute on function public.reserve_daily_questions(uuid, int, int) to service_role;
+
 -- Default: deny all for clients (no policies).

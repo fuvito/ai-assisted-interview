@@ -27,7 +27,10 @@ interviewRouter.get("/:interviewId", async (req, res) => {
 interviewRouter.post("/start", async (req, res) => {
   try {
     const payload = parseStartInterviewRequest(req.body);
-    const result = await startInterview(payload);
+    const userId = (req as unknown as { userId?: string }).userId;
+    if (!userId) return res.status(401).json({ error: "Missing user context" });
+
+    const result = await startInterview({ req: payload, userId });
     return res.json(result);
   } catch (error) {
     if (isHttpError(error)) return res.status(error.status).json({ error: error.message });

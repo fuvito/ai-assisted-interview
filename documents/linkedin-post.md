@@ -1,0 +1,9 @@
+- title of the application: AI Assisted Interview
+- why I developed this application: 
+  - I was searching for Interview questions and I came up with this Idea
+  - I was experimenting with Gemini Integration
+  - React and Supabase Practice
+  - One more application in myu portfolio
+- Technologies used: ?
+- How to signup: please drop me a DM with access request, I will create and send your account info
+- In return please send your feedback
