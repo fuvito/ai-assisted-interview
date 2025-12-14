@@ -6,19 +6,17 @@ import { startInterview, submitAnswer } from '../api'
 import type { InterviewState, LoadState, ReportCardItem } from '../types'
 import { ActiveInterviewCard } from './ActiveInterviewCard'
 import { FeedbackCard } from './FeedbackCard'
+import { MockInterviewSetupCard } from './MockInterviewSetupCard'
 import { ReportCard } from './ReportCard'
-import { SubjectPickerCard } from './SubjectPickerCard'
 
 type Props = {
-  subjectsState: LoadState
-  subjectsError: string | null
   subjects: Subject[]
-  initialSubjectId: SubjectId | null
+  subjectId: SubjectId
   onExit: () => void
 }
 
-export function MockInterview({ subjectsState, subjectsError, subjects, initialSubjectId, onExit }: Props) {
-  const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId | null>(initialSubjectId)
+export function MockInterview({ subjects, subjectId, onExit }: Props) {
+  const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId>(subjectId)
 
   const [questionCountText, setQuestionCountText] = useState('5')
 
@@ -35,11 +33,12 @@ export function MockInterview({ subjectsState, subjectsError, subjects, initialS
   const [lastFeedback, setLastFeedback] = useState<SubmitAnswerResponse | null>(null)
 
   useEffect(() => {
-    setSelectedSubjectId(initialSubjectId)
-  }, [initialSubjectId])
-
-  async function handleStartInterview(subjectId: SubjectId) {
     setSelectedSubjectId(subjectId)
+  }, [subjectId])
+
+  const selectedSubject = subjects.find((s) => s.id === selectedSubjectId) || null
+
+  async function handleStartInterview() {
     setStartState('loading')
     setStartError(null)
     setSubmitError(null)
@@ -52,7 +51,7 @@ export function MockInterview({ subjectsState, subjectsError, subjects, initialS
       const questionCount = Number.isFinite(parsedCount) && parsedCount > 0 ? Math.floor(parsedCount) : undefined
 
       const payload: StartInterviewRequest = {
-        subjectId,
+        subjectId: selectedSubjectId,
         ...(questionCount !== undefined ? { questionCount } : {}),
       }
 
@@ -126,10 +125,10 @@ export function MockInterview({ subjectsState, subjectsError, subjects, initialS
         <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'baseline', flexWrap: 'wrap' }}>
           <Box>
             <Typography variant="h4" fontWeight={800}>
-              Mock interview
+              Interview
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Practice with realistic questions and get a report card.
+              {selectedSubject?.name ? `${selectedSubject.name} (${selectedSubjectId})` : selectedSubjectId}
             </Typography>
           </Box>
 
@@ -138,18 +137,18 @@ export function MockInterview({ subjectsState, subjectsError, subjects, initialS
           </Button>
         </Box>
 
-        <SubjectPickerCard
-          subjectsState={subjectsState}
-          subjectsError={subjectsError}
-          subjects={subjects}
-          selectedSubjectId={selectedSubjectId}
-          disabled={startState === 'loading' || submitState === 'loading'}
-          questionCountText={questionCountText}
-          onQuestionCountTextChange={setQuestionCountText}
-          startState={startState}
-          startError={startError}
-          onStartInterview={handleStartInterview}
-        />
+        {selectedSubjectId && (
+          <MockInterviewSetupCard
+            subjectId={selectedSubjectId}
+            subjectName={selectedSubject?.name}
+            questionCountText={questionCountText}
+            onQuestionCountTextChange={setQuestionCountText}
+            startState={startState}
+            startError={startError}
+            disabled={submitState === 'loading'}
+            onStart={handleStartInterview}
+          />
+        )}
 
         {interview && (
           <ActiveInterviewCard

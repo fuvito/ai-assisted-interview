@@ -40,17 +40,17 @@ export default function App() {
   }, [])
 
   if (view === 'mock-interview') {
-    return (
-      <MockInterview
-        subjectsState={subjectsState}
-        subjectsError={subjectsError}
-        subjects={subjects}
-        initialSubjectId={mockInterviewSubjectId}
-        onExit={() => {
-          setView('dashboard')
-        }}
-      />
-    )
+    if (mockInterviewSubjectId) {
+      return (
+        <MockInterview
+          subjects={subjects}
+          subjectId={mockInterviewSubjectId}
+          onExit={() => {
+            setView('dashboard')
+          }}
+        />
+      )
+    }
   }
 
   return (

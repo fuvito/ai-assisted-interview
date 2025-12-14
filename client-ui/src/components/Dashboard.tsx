@@ -1,7 +1,6 @@
 import type { Subject, SubjectId } from '@app/shared'
 import {
   Box,
-  Button,
   Card,
   CardActionArea,
   CardContent,
@@ -83,11 +82,9 @@ export function Dashboard({ subjectsState, subjectsError, subjects, onStartMockI
                         {s.id}
                       </Typography>
 
-                      <Box>
-                        <Button variant="contained" size="small" onClick={() => onStartMockInterview(s.id)}>
-                          Start mock interview
-                        </Button>
-                      </Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Click to start mock interview
+                      </Typography>
                     </Stack>
                   </CardContent>
                 </CardActionArea>
