@@ -64,3 +64,21 @@ export type SubmitAnswerResponse = {
   questionIndex: number;
   totalQuestions: number;
 };
+
+export type InterviewStatus = "in_progress" | "completed";
+
+export type InterviewReportItem = {
+  questionIndex: number;
+  totalQuestions: number;
+  review: AnswerReview;
+};
+
+export type GetInterviewResponse = {
+  interviewId: string;
+  subjectId: SubjectId;
+  status: InterviewStatus;
+  questionIndex: number;
+  totalQuestions: number;
+  currentQuestion?: PublicQuestion;
+  reportCard: InterviewReportItem[];
+};

@@ -4,6 +4,7 @@ import { Box, Button, Container, Stack, Typography } from '@mui/material'
 
 import { startInterview, submitAnswer } from '../api'
 import type { InterviewState, LoadState, ReportCardItem } from '../types'
+import { upsertRecentInterview } from '../recentInterviews'
 import { ActiveInterviewCard } from './ActiveInterviewCard'
 import { FeedbackCard } from './FeedbackCard'
 import { MockInterviewSetupCard } from './MockInterviewSetupCard'
@@ -57,6 +58,9 @@ export function MockInterview({ subjects, subjectId, onExit }: Props) {
 
       const data = await startInterview(payload)
 
+      localStorage.setItem('lastInterviewId', data.interviewId)
+      upsertRecentInterview({ interviewId: data.interviewId, subjectId: selectedSubjectId, status: 'in_progress' })
+
       setInterview({
         interviewId: data.interviewId,
         question: data.question,
@@ -88,6 +92,12 @@ export function MockInterview({ subjects, subjectId, onExit }: Props) {
       }
 
       const data = await submitAnswer(interview.interviewId, payload)
+
+      upsertRecentInterview({
+        interviewId: interview.interviewId,
+        subjectId: interview.question.subjectId,
+        status: data.done ? 'completed' : 'in_progress',
+      })
 
       setLastFeedback(data)
 

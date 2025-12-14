@@ -17,6 +17,15 @@ type InterviewQuestionRow = {
   question_id: string;
 };
 
+type InterviewAnswerRow = {
+  interview_id: string;
+  question_id: string;
+  answer_text: string;
+  score: number;
+  feedback: string;
+  created_at: string;
+};
+
 export type Interview = {
   id: string;
   subjectId: SubjectId;
@@ -66,6 +75,46 @@ export async function setInterviewQuestions(interviewId: string, questionIds: st
 
   const { error } = await supabase.from("interview_questions").insert(rows);
   if (error) throw httpError(500, error.message);
+}
+
+export async function listInterviewQuestionIds(interviewId: string): Promise<Array<{ position: number; questionId: string }>> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw httpError(500, "Missing SUPABASE_URL and SUPABASE_KEY");
+
+  const { data, error } = await supabase
+    .from("interview_questions")
+    .select("interview_id,position,question_id")
+    .eq("interview_id", interviewId)
+    .order("position", { ascending: true });
+
+  if (error) throw httpError(500, error.message);
+
+  return ((data as InterviewQuestionRow[] | null | undefined) ?? []).map((row) => ({
+    position: row.position,
+    questionId: row.question_id,
+  }));
+}
+
+export async function listInterviewAnswers(interviewId: string): Promise<
+  Array<{ questionId: string; answerText: string; score: number; feedback: string }>
+> {
+  const supabase = getSupabaseClient();
+  if (!supabase) throw httpError(500, "Missing SUPABASE_URL and SUPABASE_KEY");
+
+  const { data, error } = await supabase
+    .from("interview_answers")
+    .select("interview_id,question_id,answer_text,score,feedback,created_at")
+    .eq("interview_id", interviewId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw httpError(500, error.message);
+
+  return ((data as InterviewAnswerRow[] | null | undefined) ?? []).map((row) => ({
+    questionId: row.question_id,
+    answerText: row.answer_text,
+    score: row.score,
+    feedback: row.feedback,
+  }));
 }
 
 export async function getInterview(interviewId: string): Promise<Interview> {

@@ -1,4 +1,5 @@
 import type {
+  GetInterviewResponse,
   StartInterviewRequest,
   StartInterviewResponse,
   Subject,
@@ -41,6 +42,10 @@ export async function startInterview(payload: StartInterviewRequest): Promise<St
     method: 'POST',
     body: JSON.stringify(payload),
   })
+}
+
+export async function getInterviewById(interviewId: string): Promise<GetInterviewResponse> {
+  return fetchJson<GetInterviewResponse>(apiUrl(`/api/interviews/${encodeURIComponent(interviewId)}`))
 }
 
 export async function submitAnswer(interviewId: string, payload: SubmitAnswerRequest): Promise<SubmitAnswerResponse> {

@@ -10,15 +10,34 @@ import {
 } from '@mui/material'
 
 import type { LoadState } from '../types'
+import type { RecentInterview } from '../recentInterviews'
+import { ResumeInterviewCard } from './ResumeInterviewCard'
+import { RecentInterviewsCard } from './RecentInterviewsCard'
 
 type Props = {
   subjectsState: LoadState
   subjectsError: string | null
   subjects: Subject[]
   onStartMockInterview: (subjectId: SubjectId) => void
+  onResumeInterview: (interviewId: string) => void
+  initialInterviewId: string
+
+  recentInterviews: RecentInterview[]
+  onCopyInterviewId: (interviewId: string) => void
+  onRemoveRecentInterview: (interviewId: string) => void
 }
 
-export function Dashboard({ subjectsState, subjectsError, subjects, onStartMockInterview }: Props) {
+export function Dashboard({
+  subjectsState,
+  subjectsError,
+  subjects,
+  onStartMockInterview,
+  onResumeInterview,
+  initialInterviewId,
+  recentInterviews,
+  onCopyInterviewId,
+  onRemoveRecentInterview,
+}: Props) {
   return (
     <Container maxWidth="md" sx={{ py: { xs: 4, sm: 6 } }}>
       <Stack spacing={2.5}>
@@ -42,6 +61,16 @@ export function Dashboard({ subjectsState, subjectsError, subjects, onStartMockI
             </Stack>
           </CardContent>
         </Card>
+
+        <RecentInterviewsCard
+          items={recentInterviews}
+          subjects={subjects}
+          onResume={onResumeInterview}
+          onCopyId={onCopyInterviewId}
+          onRemove={onRemoveRecentInterview}
+        />
+
+        <ResumeInterviewCard initialInterviewId={initialInterviewId} onResume={onResumeInterview} />
 
         {subjectsState === 'loading' && (
           <Card variant="outlined">

@@ -8,8 +8,10 @@ import { AppLayout } from './components/AppLayout'
 import { DashboardPage } from './components/DashboardPage'
 import { Home } from './components/Home'
 import { InterviewPage } from './components/InterviewPage'
+import { InterviewReportPage } from './components/InterviewReportPage'
 import { LoginPage } from './components/LoginPage'
 import { RequireAuth } from './components/RequireAuth'
+import { ResumeInterviewPage } from './components/ResumeInterviewPage'
 
 function AppRoutes() {
   const { initialized, accessToken } = useAuth()
@@ -26,6 +28,8 @@ function AppRoutes() {
         <Route element={<RequireAuth />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/interview/:subjectId" element={<InterviewPage />} />
+          <Route path="/interview/resume/:interviewId" element={<ResumeInterviewPage />} />
+          <Route path="/interview/report/:interviewId" element={<InterviewReportPage />} />
           <Route path="/account" element={<Account />} />
         </Route>
 
