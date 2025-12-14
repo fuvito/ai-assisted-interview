@@ -7,6 +7,7 @@ import { AppLayout } from './components/AppLayout'
 import { Home } from './components/Home'
 import { LoginPage } from './components/LoginPage'
 import { QuestionsPage } from './components/QuestionsPage'
+import { SubjectsPage } from './components/SubjectsPage'
 import { RequireAuth } from './components/RequireAuth'
 
 function AppRoutes() {
@@ -23,6 +24,7 @@ function AppRoutes() {
 
         <Route element={<RequireAuth />}>
           <Route path="/questions" element={<QuestionsPage />} />
+          <Route path="/subjects" element={<SubjectsPage />} />
           <Route path="/account" element={<Account />} />
         </Route>
 

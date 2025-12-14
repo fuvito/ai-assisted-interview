@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Question, SubjectId } from '@app/shared'
+import type { Question, Subject, SubjectId } from '@app/shared'
 import {
   Alert,
   Box,
@@ -42,7 +42,11 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 export function QuestionsPage() {
   const { accessToken } = useAuth()
 
-  const [subjectId, setSubjectId] = useState<SubjectId>('java')
+  const [subjectsState, setSubjectsState] = useState<LoadState>('idle')
+  const [subjectsError, setSubjectsError] = useState<string | null>(null)
+  const [subjects, setSubjects] = useState<Subject[]>([])
+
+  const [subjectId, setSubjectId] = useState<SubjectId>('')
   const [state, setState] = useState<LoadState>('idle')
   const [error, setError] = useState<string | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -76,6 +80,25 @@ export function QuestionsPage() {
     [accessToken],
   )
 
+  const loadSubjects = useCallback(async () => {
+    if (!accessToken) return
+
+    setSubjectsState('loading')
+    setSubjectsError(null)
+    try {
+      const data = await fetchAdminJson<{ subjects: Subject[] }>('/api/admin/subjects')
+      setSubjects(data.subjects)
+      setSubjectsState('success')
+
+      if (!subjectId && data.subjects.length > 0) {
+        setSubjectId(data.subjects[0]!.id)
+      }
+    } catch (e) {
+      setSubjectsState('error')
+      setSubjectsError(e instanceof Error ? e.message : 'Failed to load subjects')
+    }
+  }, [accessToken, fetchAdminJson, subjectId])
+
   const loadQuestions = useCallback(
     async (currentSubject: SubjectId) => {
       if (!accessToken) return
@@ -98,6 +121,12 @@ export function QuestionsPage() {
 
   useEffect(() => {
     if (!accessToken) return
+    loadSubjects()
+  }, [accessToken, loadSubjects])
+
+  useEffect(() => {
+    if (!accessToken) return
+    if (!subjectId) return
     loadQuestions(subjectId)
   }, [accessToken, loadQuestions, subjectId])
 
@@ -181,10 +210,13 @@ export function QuestionsPage() {
                   label="Subject"
                   value={subjectId}
                   onChange={(e) => setSubjectId(e.target.value as SubjectId)}
-                  disabled={state === 'loading'}
+                  disabled={state === 'loading' || subjectsState === 'loading'}
                 >
-                  <MenuItem value="java">Java</MenuItem>
-                  <MenuItem value="typescript">TypeScript</MenuItem>
+                  {subjects.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      {s.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -195,6 +227,7 @@ export function QuestionsPage() {
                 {state === 'loading' && <CircularProgress size={20} />}
               </Box>
 
+              {subjectsError && <Alert severity="error">{subjectsError}</Alert>}
               {error && <Alert severity="error">{error}</Alert>}
             </Stack>
           </CardContent>

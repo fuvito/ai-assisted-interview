@@ -28,6 +28,25 @@ create policy if not exists "subjects_public_read"
   to anon, authenticated
   using (true);
 
+create policy if not exists "subjects_admin_write"
+  on public.subjects
+  for insert
+  to authenticated
+  with check (exists (select 1 from public.admin_users au where au.user_id = auth.uid()));
+
+create policy if not exists "subjects_admin_update"
+  on public.subjects
+  for update
+  to authenticated
+  using (exists (select 1 from public.admin_users au where au.user_id = auth.uid()))
+  with check (exists (select 1 from public.admin_users au where au.user_id = auth.uid()));
+
+create policy if not exists "subjects_admin_delete"
+  on public.subjects
+  for delete
+  to authenticated
+  using (exists (select 1 from public.admin_users au where au.user_id = auth.uid()));
+
 create policy if not exists "questions_public_read"
   on public.questions
   for select

@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 
 import { adminQuestionsRouter } from "./routes/adminQuestionsRoutes.js";
+import { adminSubjectsRouter } from "./routes/adminSubjectsRoutes.js";
 import { contentRouter } from "./routes/contentRoutes.js";
 import { healthRouter } from "./routes/healthRoutes.js";
 import { interviewRouter } from "./routes/interviewRoutes.js";
@@ -22,6 +23,7 @@ app.use(express.json());
 
 app.use(healthRouter);
 app.use("/api/admin", requireAdmin, adminQuestionsRouter);
+app.use("/api/admin", requireAdmin, adminSubjectsRouter);
 app.use("/api", requireAuth, contentRouter);
 app.use("/api/interviews", requireAuth, interviewRouter);
 

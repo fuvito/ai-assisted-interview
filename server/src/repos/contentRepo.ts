@@ -15,7 +15,7 @@ type QuestionRow = {
   expert_answer: string;
 };
 
-export async function listSubjects(allowedIds: SubjectId[]): Promise<Subject[]> {
+export async function listSubjects(allowedIds?: SubjectId[]): Promise<Subject[]> {
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw httpError(
@@ -24,11 +24,9 @@ export async function listSubjects(allowedIds: SubjectId[]): Promise<Subject[]> 
     );
   }
 
-  const { data, error } = await supabase
-    .from("subjects")
-    .select("id,name")
-    .in("id", allowedIds)
-    .order("name", { ascending: true });
+  const base = supabase.from("subjects").select("id,name").order("name", { ascending: true });
+  const query = allowedIds && allowedIds.length > 0 ? base.in("id", allowedIds) : base;
+  const { data, error } = await query;
 
   if (error) throw httpError(500, error.message);
 

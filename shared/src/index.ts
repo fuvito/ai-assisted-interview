@@ -3,7 +3,7 @@ export type CandidateProfile = {
   name: string;
 };
 
-export type SubjectId = "java" | "typescript";
+export type SubjectId = string;
 
 export type Subject = {
   id: SubjectId;
