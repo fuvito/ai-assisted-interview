@@ -18,6 +18,8 @@ import {
   Typography,
 } from '@mui/material'
 
+import { supabase } from './supabaseClient'
+
 type LoadState = 'idle' | 'loading' | 'success' | 'error'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
@@ -36,6 +38,15 @@ async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export default function App() {
+  const [authState, setAuthState] = useState<LoadState>('idle')
+  const [authError, setAuthError] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  const [loginEmail, setLoginEmail] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginState, setLoginState] = useState<LoadState>('idle')
+
   const [subjectId, setSubjectId] = useState<SubjectId>('java')
   const [state, setState] = useState<LoadState>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -57,12 +68,62 @@ export default function App() {
     setExpertAnswer('')
   }
 
+  useEffect(() => {
+    let cancelled = false
+
+    async function initAuth() {
+      setAuthState('loading')
+      setAuthError(null)
+      try {
+        const { data, error: sessionError } = await supabase.auth.getSession()
+        if (cancelled) return
+        if (sessionError) throw sessionError
+
+        const token = data.session?.access_token ?? null
+        const email = data.session?.user?.email ?? null
+        setAccessToken(token)
+        setUserEmail(email)
+        setAuthState('success')
+      } catch (e) {
+        if (cancelled) return
+        setAuthState('error')
+        setAuthError(e instanceof Error ? e.message : 'Failed to initialize auth')
+      }
+    }
+
+    initAuth()
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAccessToken(session?.access_token ?? null)
+      setUserEmail(session?.user?.email ?? null)
+    })
+
+    return () => {
+      cancelled = true
+      sub.subscription.unsubscribe()
+    }
+  }, [])
+
+  const fetchAdminJson = useCallback(
+    async <T,>(path: string, init?: RequestInit): Promise<T> => {
+      if (!accessToken) throw new Error('Not authenticated')
+
+      const headers = new Headers(init?.headers)
+      if (!headers.has('Content-Type') && init?.body) headers.set('Content-Type', 'application/json')
+      headers.set('Authorization', `Bearer ${accessToken}`)
+
+      return fetchJson<T>(apiUrl(path), { ...init, headers })
+    },
+    [accessToken],
+  )
+
   const loadQuestions = useCallback(async (currentSubject: SubjectId) => {
+    if (!accessToken) return
     setState('loading')
     setError(null)
     try {
-      const data = await fetchJson<{ questions: Question[] }>(
-        apiUrl(`/api/admin/questions?subject=${encodeURIComponent(currentSubject)}`),
+      const data = await fetchAdminJson<{ questions: Question[] }>(
+        `/api/admin/questions?subject=${encodeURIComponent(currentSubject)}`,
       )
       setQuestions(data.questions)
       setState('success')
@@ -71,11 +132,12 @@ export default function App() {
       setState('error')
       setError(err instanceof Error ? err.message : 'Failed to load questions')
     }
-  }, [])
+  }, [accessToken, fetchAdminJson])
 
   useEffect(() => {
+    if (!accessToken) return
     loadQuestions(subjectId)
-  }, [loadQuestions, subjectId])
+  }, [accessToken, loadQuestions, subjectId])
 
   useEffect(() => {
     if (!selectedQuestion) return
@@ -87,9 +149,8 @@ export default function App() {
     setState('loading')
     setError(null)
     try {
-      await fetchJson<{ question: Question }>(apiUrl('/api/admin/questions'), {
+      await fetchAdminJson<{ question: Question }>('/api/admin/questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subjectId, questionText, expertAnswer }),
       })
       await loadQuestions(subjectId)
@@ -107,9 +168,8 @@ export default function App() {
     setState('loading')
     setError(null)
     try {
-      await fetchJson<{ question: Question }>(apiUrl(`/api/admin/questions/${encodeURIComponent(selectedId)}`), {
+      await fetchAdminJson<{ question: Question }>(`/api/admin/questions/${encodeURIComponent(selectedId)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ questionText, expertAnswer }),
       })
       await loadQuestions(subjectId)
@@ -127,7 +187,7 @@ export default function App() {
     setState('loading')
     setError(null)
     try {
-      await fetchJson<{ ok: boolean }>(apiUrl(`/api/admin/questions/${encodeURIComponent(selectedId)}`), {
+      await fetchAdminJson<{ ok: boolean }>(`/api/admin/questions/${encodeURIComponent(selectedId)}`, {
         method: 'DELETE',
       })
       await loadQuestions(subjectId)
@@ -135,6 +195,100 @@ export default function App() {
       setState('error')
       setError(err instanceof Error ? err.message : 'Failed to delete question')
     }
+  }
+
+  async function handleLogin() {
+    setLoginState('loading')
+    setAuthError(null)
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      })
+
+      if (signInError) throw signInError
+
+      setAccessToken(data.session?.access_token ?? null)
+      setUserEmail(data.user?.email ?? null)
+      setAuthState('success')
+      setLoginState('success')
+    } catch (e) {
+      setLoginState('error')
+      setAuthError(e instanceof Error ? e.message : 'Login failed')
+    }
+  }
+
+  async function handleLogout() {
+    setState('idle')
+    setError(null)
+    resetForm()
+    setQuestions([])
+    await supabase.auth.signOut()
+    setAccessToken(null)
+    setUserEmail(null)
+  }
+
+  if (authState === 'loading') {
+    return (
+      <Container maxWidth="sm" sx={{ py: 6 }}>
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={2}>
+              <Typography variant="h5" fontWeight={800}>
+                Admin UI
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <CircularProgress size={20} />
+                <Typography variant="body2">Loading…</Typography>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Container>
+    )
+  }
+
+  if (!accessToken) {
+    return (
+      <Container maxWidth="sm" sx={{ py: 6 }}>
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="h5" fontWeight={800}>
+                  Admin UI Login
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Sign in with a Supabase Auth admin account.
+                </Typography>
+              </Box>
+
+              {authError && <Alert severity="error">{authError}</Alert>}
+
+              <TextField
+                label="Email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                autoComplete="email"
+                fullWidth
+              />
+              <TextField
+                label="Password"
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                autoComplete="current-password"
+                fullWidth
+              />
+
+              <Button variant="contained" onClick={handleLogin} disabled={loginState === 'loading'}>
+                Sign in
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Container>
+    )
   }
 
   return (
@@ -148,6 +302,21 @@ export default function App() {
             MVP: CRUD questions and expert answers for Java and TypeScript.
           </Typography>
         </Box>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Stack spacing={1.5}>
+              <Typography variant="body2" color="text.secondary">
+                Signed in as {userEmail || 'unknown'}
+              </Typography>
+              <Box>
+                <Button variant="outlined" onClick={handleLogout}>
+                  Sign out
+                </Button>
+              </Box>
+            </Stack>
+          </CardContent>
+        </Card>
 
         <Card variant="outlined">
           <CardContent>

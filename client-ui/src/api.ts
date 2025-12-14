@@ -6,6 +6,8 @@ import type {
   SubmitAnswerResponse,
 } from '@app/shared'
 
+import { supabase } from './supabaseClient'
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 function apiUrl(path: string): string {
@@ -13,7 +15,14 @@ function apiUrl(path: string): string {
 }
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+
+  const headers = new Headers(init?.headers)
+  if (!headers.has('Content-Type') && init?.body) headers.set('Content-Type', 'application/json')
+  if (token) headers.set('Authorization', `Bearer ${token}`)
+
+  const res = await fetch(url, { ...init, headers })
   if (!res.ok) {
     const text = await res.text()
     throw new Error(text || `Request failed (${res.status})`)
@@ -29,7 +38,6 @@ export async function getSubjects(): Promise<Subject[]> {
 export async function startInterview(payload: StartInterviewRequest): Promise<StartInterviewResponse> {
   return fetchJson<StartInterviewResponse>(apiUrl('/api/interviews/start'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
 }
@@ -37,7 +45,6 @@ export async function startInterview(payload: StartInterviewRequest): Promise<St
 export async function submitAnswer(interviewId: string, payload: SubmitAnswerRequest): Promise<SubmitAnswerResponse> {
   return fetchJson<SubmitAnswerResponse>(apiUrl(`/api/interviews/${encodeURIComponent(interviewId)}/answer`), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   })
 }
