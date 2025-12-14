@@ -246,6 +246,7 @@ export function SubjectQuestionsPage() {
                   color="inherit"
                   startIcon={<ArrowBackIcon />}
                   onClick={() => navigate('/questions')}
+                  sx={{ borderColor: 'rgba(255,255,255,0.65)' }}
                 >
                   Subjects
                 </Button>
@@ -255,12 +256,17 @@ export function SubjectQuestionsPage() {
                   startIcon={<RefreshIcon />}
                   onClick={loadQuestions}
                   disabled={state === 'loading'}
+                  sx={{ borderColor: 'rgba(255,255,255,0.65)' }}
                 >
                   Refresh
                 </Button>
                 <Button
                   variant="contained"
-                  color="inherit"
+                  sx={{
+                    bgcolor: 'common.white',
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'grey.100' },
+                  }}
                   startIcon={<AddIcon />}
                   onClick={openCreate}
                   disabled={state === 'loading'}
