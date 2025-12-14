@@ -1,5 +1,5 @@
 import type { Subject, SubjectId } from '@app/shared'
-import { Box, Button, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material'
+import { Box, Button, Card, CardContent, Chip, Divider, Stack, Typography } from '@mui/material'
 
 import type { RecentInterview } from '../recentInterviews'
 
@@ -18,6 +18,14 @@ function subjectLabel(subjects: Subject[], subjectId: SubjectId): string {
 
 export function RecentInterviewsCard({ items, subjects, onResume, onCopyId, onRemove }: Props) {
   if (!items.length) return null
+
+  const formatDateTime = (ts: number) => {
+    try {
+      return new Date(ts).toLocaleString()
+    } catch {
+      return ''
+    }
+  }
 
   return (
     <Card variant="outlined" sx={{ overflow: 'hidden' }}>
@@ -43,6 +51,12 @@ export function RecentInterviewsCard({ items, subjects, onResume, onCopyId, onRe
                     <Typography variant="caption" color="text.secondary">
                       {it.interviewId}
                     </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                      Updated: {formatDateTime(it.updatedAt)}
+                      {typeof it.averageScore === 'number' && Number.isFinite(it.averageScore)
+                        ? ` • Avg score: ${Math.round(it.averageScore * 10) / 10} / 10`
+                        : ''}
+                    </Typography>
                   </Box>
 
                   <Chip
@@ -60,9 +74,9 @@ export function RecentInterviewsCard({ items, subjects, onResume, onCopyId, onRe
                   <Button size="small" variant="outlined" onClick={() => onCopyId(it.interviewId)}>
                     Copy id
                   </Button>
-                  <IconButton size="small" aria-label="Remove" onClick={() => onRemove(it.interviewId)}>
-                    ×
-                  </IconButton>
+                  <Button size="small" color="error" variant="text" onClick={() => onRemove(it.interviewId)}>
+                    Delete
+                  </Button>
                 </Box>
               </Stack>
             </Box>

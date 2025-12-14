@@ -1,4 +1,7 @@
-import { Alert, Box, Button, Card, CardContent, Container, Stack, TextField, Typography } from '@mui/material'
+import { useState } from 'react'
+import { Alert, Box, Button, Card, CardContent, Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
 
 export type LoginMode = 'sign_in' | 'sign_up'
 
@@ -11,7 +14,6 @@ type Props = {
 
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
-  onModeChange: (mode: LoginMode) => void
 
   onSubmit: () => void
 }
@@ -25,9 +27,10 @@ export function Login(props: Props) {
     error,
     onEmailChange,
     onPasswordChange,
-    onModeChange,
     onSubmit,
   } = props
+
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
@@ -55,24 +58,32 @@ export function Login(props: Props) {
             />
             <TextField
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => onPasswordChange(e.target.value)}
               autoComplete={mode === 'sign_up' ? 'new-password' : 'current-password'}
               fullWidth
               disabled={busy}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                      disabled={busy}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button variant="contained" onClick={onSubmit} disabled={busy}>
                 {mode === 'sign_up' ? 'Create account' : 'Sign in'}
-              </Button>
-              <Button
-                variant="text"
-                onClick={() => onModeChange(mode === 'sign_in' ? 'sign_up' : 'sign_in')}
-                disabled={busy}
-              >
-                {mode === 'sign_in' ? 'Create account instead' : 'Back to sign in'}
               </Button>
             </Box>
           </Stack>

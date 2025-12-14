@@ -10,9 +10,7 @@ import {
 } from '@mui/material'
 
 import type { LoadState } from '../types'
-import type { RecentInterview } from '../recentInterviews'
 import { ResumeInterviewCard } from './ResumeInterviewCard'
-import { RecentInterviewsCard } from './RecentInterviewsCard'
 
 type Props = {
   subjectsState: LoadState
@@ -21,10 +19,6 @@ type Props = {
   onStartMockInterview: (subjectId: SubjectId) => void
   onResumeInterview: (interviewId: string) => void
   initialInterviewId: string
-
-  recentInterviews: RecentInterview[]
-  onCopyInterviewId: (interviewId: string) => void
-  onRemoveRecentInterview: (interviewId: string) => void
 }
 
 export function Dashboard({
@@ -34,9 +28,6 @@ export function Dashboard({
   onStartMockInterview,
   onResumeInterview,
   initialInterviewId,
-  recentInterviews,
-  onCopyInterviewId,
-  onRemoveRecentInterview,
 }: Props) {
   return (
     <Container maxWidth="md" sx={{ py: { xs: 4, sm: 6 } }}>
@@ -61,14 +52,6 @@ export function Dashboard({
             </Stack>
           </CardContent>
         </Card>
-
-        <RecentInterviewsCard
-          items={recentInterviews}
-          subjects={subjects}
-          onResume={onResumeInterview}
-          onCopyId={onCopyInterviewId}
-          onRemove={onRemoveRecentInterview}
-        />
 
         <ResumeInterviewCard initialInterviewId={initialInterviewId} onResume={onResumeInterview} />
 

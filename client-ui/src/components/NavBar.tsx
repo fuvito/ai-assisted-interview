@@ -34,6 +34,9 @@ export function NavBar() {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {accessToken ? (
             <>
+              <Button component={RouterLink} to="/recent-interviews" color="inherit">
+                Recent interviews
+              </Button>
               <Button component={RouterLink} to="/account" color="inherit">
                 Account
               </Button>

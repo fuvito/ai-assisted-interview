@@ -5,6 +5,8 @@ export type RecentInterview = {
   subjectId: SubjectId
   status: 'in_progress' | 'completed'
   updatedAt: number
+  averageScore?: number
+  answeredCount?: number
 }
 
 const KEY = 'recentInterviewsV1'
@@ -31,12 +33,16 @@ function readRaw(): RecentInterview[] {
       const subjectId = String(obj.subjectId ?? '').trim()
       const status = obj.status === 'completed' ? 'completed' : 'in_progress'
       const updatedAtNum = Number(obj.updatedAt)
+      const averageScoreNum = Number(obj.averageScore)
+      const answeredCountNum = Number(obj.answeredCount)
       if (!interviewId || !subjectId) continue
       items.push({
         interviewId,
         subjectId: subjectId as SubjectId,
         status,
         updatedAt: Number.isFinite(updatedAtNum) ? updatedAtNum : Date.now(),
+        ...(Number.isFinite(averageScoreNum) ? { averageScore: averageScoreNum } : {}),
+        ...(Number.isFinite(answeredCountNum) ? { answeredCount: answeredCountNum } : {}),
       })
     }
 
@@ -60,6 +66,8 @@ export function upsertRecentInterview(input: {
   subjectId: SubjectId
   status: 'in_progress' | 'completed'
   updatedAt?: number
+  averageScore?: number
+  answeredCount?: number
 }): void {
   const interviewId = input.interviewId.trim()
   const subjectId = String(input.subjectId).trim() as SubjectId
@@ -70,11 +78,16 @@ export function upsertRecentInterview(input: {
   const items = readRaw()
   const existingIdx = items.findIndex((x) => x.interviewId === interviewId)
 
+  const averageScore = Number(input.averageScore)
+  const answeredCount = Number(input.answeredCount)
+
   const next: RecentInterview = {
     interviewId,
     subjectId,
     status: input.status,
     updatedAt: now,
+    ...(Number.isFinite(averageScore) ? { averageScore } : {}),
+    ...(Number.isFinite(answeredCount) ? { answeredCount } : {}),
   }
 
   if (existingIdx >= 0) {
@@ -84,6 +97,8 @@ export function upsertRecentInterview(input: {
       ...prev,
       ...next,
       status: prev.status === 'completed' ? 'completed' : next.status,
+      ...(prev.averageScore !== undefined && next.averageScore === undefined ? { averageScore: prev.averageScore } : {}),
+      ...(prev.answeredCount !== undefined && next.answeredCount === undefined ? { answeredCount: prev.answeredCount } : {}),
     })
   } else {
     items.unshift(next)

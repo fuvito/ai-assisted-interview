@@ -107,7 +107,7 @@ export async function evaluateAnswer(
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const modelName = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+    const modelName = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
     const model = genAI.getGenerativeModel({ model: modelName });
 
     const prompt = [
@@ -145,7 +145,8 @@ export async function evaluateAnswer(
     if (parsed) return parsed;
 
     return evaluateAnswerHeuristic(userAnswer, expertAnswer);
-  } catch {
+  } catch (e) {
+    console.error(e);
     return evaluateAnswerHeuristic(userAnswer, expertAnswer);
   }
 }

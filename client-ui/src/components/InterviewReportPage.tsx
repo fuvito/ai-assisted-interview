@@ -45,8 +45,20 @@ export function InterviewReportPage() {
         const result = await getInterviewById(interviewId)
         if (cancelled) return
 
+        const answeredCount = result.reportCard?.length ?? 0
+        const averageScore =
+          answeredCount > 0
+            ? result.reportCard.reduce((sum, item) => sum + item.review.evaluation.score, 0) / answeredCount
+            : undefined
+
         localStorage.setItem('lastInterviewId', result.interviewId)
-        upsertRecentInterview({ interviewId: result.interviewId, subjectId: result.subjectId, status: result.status })
+        upsertRecentInterview({
+          interviewId: result.interviewId,
+          subjectId: result.subjectId,
+          status: result.status,
+          ...(answeredCount > 0 ? { answeredCount } : {}),
+          ...(averageScore !== undefined ? { averageScore } : {}),
+        })
 
         setData(result)
         setLoadState('success')

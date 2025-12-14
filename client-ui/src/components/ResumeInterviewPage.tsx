@@ -31,6 +31,8 @@ export function ResumeInterviewPage() {
   const [answerText, setAnswerText] = useState('')
   const [submitState, setSubmitState] = useState<LoadState>('idle')
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [answeredCount, setAnsweredCount] = useState(0)
+  const [averageScore, setAverageScore] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -43,11 +45,22 @@ export function ResumeInterviewPage() {
         const result = await getInterviewById(interviewId)
         if (cancelled) return
 
+        const currentAnsweredCount = result.reportCard?.length ?? 0
+        const currentAverageScore =
+          currentAnsweredCount > 0
+            ? result.reportCard.reduce((sum, item) => sum + item.review.evaluation.score, 0) / currentAnsweredCount
+            : null
+
+        setAnsweredCount(currentAnsweredCount)
+        setAverageScore(currentAverageScore)
+
         localStorage.setItem('lastInterviewId', result.interviewId)
         upsertRecentInterview({
           interviewId: result.interviewId,
           subjectId: result.subjectId,
           status: result.status,
+          ...(currentAnsweredCount > 0 ? { answeredCount: currentAnsweredCount } : {}),
+          ...(currentAverageScore !== null ? { averageScore: currentAverageScore } : {}),
         })
 
         setData(result)
@@ -101,10 +114,20 @@ export function ResumeInterviewPage() {
 
       localStorage.setItem('lastInterviewId', interview.interviewId)
 
+      const nextAnsweredCount = answeredCount + 1
+      const nextAverageScore =
+        (averageScore ?? 0) * answeredCount / Math.max(1, nextAnsweredCount) +
+        result.evaluation.score / Math.max(1, nextAnsweredCount)
+
+      setAnsweredCount(nextAnsweredCount)
+      setAverageScore(nextAverageScore)
+
       upsertRecentInterview({
         interviewId: interview.interviewId,
         subjectId: interview.question.subjectId,
         status: result.done ? 'completed' : 'in_progress',
+        answeredCount: nextAnsweredCount,
+        averageScore: nextAverageScore,
       })
 
       if (result.done) {

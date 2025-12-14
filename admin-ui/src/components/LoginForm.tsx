@@ -1,4 +1,7 @@
-import { Alert, Box, Button, Card, CardContent, Container, Stack, TextField, Typography } from '@mui/material'
+import { useState } from 'react'
+import { Alert, Box, Button, Card, CardContent, Container, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material'
+import Visibility from '@mui/icons-material/Visibility'
+import VisibilityOff from '@mui/icons-material/VisibilityOff'
 
 type Props = {
   email: string
@@ -12,6 +15,8 @@ type Props = {
 
 export function LoginForm(props: Props) {
   const { email, password, busy, error, onEmailChange, onPasswordChange, onSubmit } = props
+
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
     <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
@@ -39,12 +44,27 @@ export function LoginForm(props: Props) {
             />
             <TextField
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => onPasswordChange(e.target.value)}
               autoComplete="current-password"
               fullWidth
               disabled={busy}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                      disabled={busy}
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button variant="contained" onClick={onSubmit} disabled={busy}>
