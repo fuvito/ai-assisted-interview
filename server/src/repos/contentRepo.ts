@@ -62,3 +62,28 @@ export async function listQuestionsBySubject(subjectId: SubjectId): Promise<Ques
     expertAnswer: row.expert_answer,
   }));
 }
+
+export async function getQuestionById(questionId: string): Promise<Question> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    throw httpError(500, "Missing SUPABASE_URL and SUPABASE_KEY");
+  }
+
+  const { data, error } = await supabase
+    .from("questions")
+    .select("id,subject_id,question_text,expert_answer")
+    .eq("id", questionId)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw httpError(500, error.message);
+  if (!data) throw httpError(404, "Question not found");
+
+  const row = data as QuestionRow;
+  return {
+    id: row.id,
+    subjectId: row.subject_id as SubjectId,
+    questionText: row.question_text,
+    expertAnswer: row.expert_answer,
+  };
+}

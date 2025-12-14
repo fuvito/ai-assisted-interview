@@ -16,3 +16,39 @@ export type Question = {
   questionText: string;
   expertAnswer: string;
 };
+
+export type PublicQuestion = {
+  id: string;
+  subjectId: SubjectId;
+  questionText: string;
+};
+
+export type EvaluationResult = {
+  score: number;
+  feedback: string;
+};
+
+export type StartInterviewRequest = {
+  subjectId: SubjectId;
+  questionCount?: number;
+};
+
+export type StartInterviewResponse = {
+  interviewId: string;
+  question: PublicQuestion;
+  questionIndex: number;
+  totalQuestions: number;
+};
+
+export type SubmitAnswerRequest = {
+  questionId: string;
+  answerText: string;
+};
+
+export type SubmitAnswerResponse = {
+  evaluation: EvaluationResult;
+  done: boolean;
+  nextQuestion?: PublicQuestion;
+  questionIndex: number;
+  totalQuestions: number;
+};
