@@ -11,7 +11,7 @@ export function NavBar() {
   const homeTo = accessToken ? '/questions' : '/'
 
   return (
-    <AppBar position="static" color="transparent" elevation={0}>
+    <AppBar position="static" color="primary" elevation={0}>
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
         <Link
           component={RouterLink}
@@ -25,7 +25,7 @@ export function NavBar() {
             <Typography variant="subtitle1" fontWeight={800} noWrap>
               AI Assisted Interview Admin
             </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography variant="caption" noWrap sx={{ opacity: 0.85 }}>
               Content management
             </Typography>
           </Box>
@@ -50,7 +50,7 @@ export function NavBar() {
                 Logout
               </Button>
               {userEmail && (
-                <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                <Typography variant="caption" sx={{ ml: 1, opacity: 0.85 }}>
                   {userEmail}
                 </Typography>
               )}
