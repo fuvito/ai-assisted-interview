@@ -14,6 +14,7 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  Snackbar,
   Stack,
   Table,
   TableBody,
@@ -22,13 +23,17 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import AddIcon from '@mui/icons-material/Add'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
+import FileCopyIcon from '@mui/icons-material/FileCopy'
 import RefreshIcon from '@mui/icons-material/Refresh'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { supabase } from '../supabaseClient'
@@ -44,6 +49,11 @@ type EditDialogState = {
   questionId: string | null
   questionText: string
   expertAnswer: string
+}
+
+type SnackbarState = {
+  open: boolean
+  message: string
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
@@ -90,6 +100,11 @@ export function SubjectQuestionsPage() {
   })
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
+  const [viewQuestionId, setViewQuestionId] = useState<string | null>(null)
+  const viewQuestion = useMemo(() => questions.find((q) => q.id === viewQuestionId) ?? null, [questions, viewQuestionId])
+
+  const [snackbar, setSnackbar] = useState<SnackbarState>({ open: false, message: '' })
 
   const fetchAdminJson = useCallback(
     async <T,>(path: string, init?: RequestInit): Promise<T> => {
@@ -165,6 +180,10 @@ export function SubjectQuestionsPage() {
     setEditDialog({ open: true, mode: 'create', questionId: null, questionText: '', expertAnswer: '' })
   }
 
+  function openDuplicate(q: Question) {
+    setEditDialog({ open: true, mode: 'create', questionId: null, questionText: q.questionText, expertAnswer: q.expertAnswer })
+  }
+
   function openEdit(q: Question) {
     setEditDialog({
       open: true,
@@ -190,11 +209,13 @@ export function SubjectQuestionsPage() {
           method: 'POST',
           body: JSON.stringify({ subjectId: subjectId as SubjectId, ...payload }),
         })
+        setSnackbar({ open: true, message: 'Question created' })
       } else {
         await fetchAdminJson<{ question: Question }>(`/api/admin/questions/${encodeURIComponent(editDialog.questionId || '')}`, {
           method: 'PUT',
           body: JSON.stringify(payload),
         })
+        setSnackbar({ open: true, message: 'Question updated' })
       }
 
       setEditDialog((prev) => ({ ...prev, open: false }))
@@ -217,11 +238,22 @@ export function SubjectQuestionsPage() {
         method: 'DELETE',
       })
       setConfirmDeleteId(null)
+      setSnackbar({ open: true, message: 'Question deleted' })
       await loadQuestions()
       setState('success')
     } catch (e) {
       setState('error')
       setError(e instanceof Error ? e.message : 'Failed to delete question')
+    }
+  }
+
+  async function copyToClipboard(text: string, successMessage: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      setSnackbar({ open: true, message: successMessage })
+    } catch {
+      setError('Failed to copy to clipboard')
+      setState('error')
     }
   }
 
@@ -318,7 +350,14 @@ export function SubjectQuestionsPage() {
                 </TableHead>
                 <TableBody>
                   {paged.map((q) => (
-                    <TableRow key={q.id} hover>
+                    <TableRow
+                      key={q.id}
+                      hover
+                      onDoubleClick={() => {
+                        setViewQuestionId(q.id)
+                      }}
+                      sx={{ cursor: 'pointer' }}
+                    >
                       <TableCell>
                         <Typography variant="subtitle2" fontWeight={800}>
                           {q.questionText.length > 120 ? `${q.questionText.slice(0, 120)}…` : q.questionText}
@@ -328,12 +367,48 @@ export function SubjectQuestionsPage() {
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <IconButton onClick={() => openEdit(q)} disabled={state === 'loading'}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton onClick={() => setConfirmDeleteId(q.id)} disabled={state === 'loading'} color="error">
-                          <DeleteIcon />
-                        </IconButton>
+                        <Tooltip title="View">
+                          <span>
+                            <IconButton onClick={() => setViewQuestionId(q.id)} disabled={state === 'loading'}>
+                              <VisibilityIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Edit">
+                          <span>
+                            <IconButton onClick={() => openEdit(q)} disabled={state === 'loading'}>
+                              <EditIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Duplicate">
+                          <span>
+                            <IconButton onClick={() => openDuplicate(q)} disabled={state === 'loading'}>
+                              <FileCopyIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Copy question">
+                          <span>
+                            <IconButton
+                              onClick={() => copyToClipboard(q.questionText, 'Question copied')}
+                              disabled={state === 'loading'}
+                            >
+                              <ContentCopyIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip title="Delete">
+                          <span>
+                            <IconButton
+                              onClick={() => setConfirmDeleteId(q.id)}
+                              disabled={state === 'loading'}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -405,6 +480,49 @@ export function SubjectQuestionsPage() {
         </DialogActions>
       </Dialog>
 
+      <Dialog open={!!viewQuestion} onClose={() => setViewQuestionId(null)} fullWidth maxWidth="md">
+        <DialogTitle>Question details</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Question
+              </Typography>
+              <Typography variant="body1" fontWeight={700} sx={{ whiteSpace: 'pre-wrap' }}>
+                {viewQuestion?.questionText || ''}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="caption" color="text.secondary">
+                Expert answer
+              </Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                {viewQuestion?.expertAnswer || ''}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              if (viewQuestion) copyToClipboard(viewQuestion.questionText, 'Question copied')
+            }}
+            disabled={!viewQuestion}
+          >
+            Copy question
+          </Button>
+          <Button
+            onClick={() => {
+              if (viewQuestion) copyToClipboard(viewQuestion.expertAnswer, 'Expert answer copied')
+            }}
+            disabled={!viewQuestion}
+          >
+            Copy answer
+          </Button>
+          <Button onClick={() => setViewQuestionId(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)}>
         <DialogTitle>Delete question?</DialogTitle>
         <DialogContent>
@@ -421,6 +539,13 @@ export function SubjectQuestionsPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={2500}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        message={snackbar.message}
+      />
     </Container>
   )
 }
