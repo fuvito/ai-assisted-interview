@@ -1,54 +1,13 @@
 import { useEffect, useState } from 'react'
-import type {
-  PublicQuestion,
-  StartInterviewRequest,
-  StartInterviewResponse,
-  Subject,
-  SubjectId,
-  SubmitAnswerRequest,
-  SubmitAnswerResponse,
-} from '@app/shared'
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CircularProgress,
-  Container,
-  Divider,
-  LinearProgress,
-  List,
-  ListItemButton,
-  ListItemText,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import type { StartInterviewRequest, Subject, SubjectId, SubmitAnswerRequest, SubmitAnswerResponse } from '@app/shared'
+import { Box, Container, Stack, Typography } from '@mui/material'
 
-type LoadState = 'idle' | 'loading' | 'success' | 'error'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
-
-function apiUrl(path: string): string {
-  return `${API_BASE_URL}${path}`
-}
-
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(text || `Request failed (${res.status})`)
-  }
-  return (await res.json()) as T
-}
-
-type InterviewState = {
-  interviewId: string
-  question: PublicQuestion
-  questionIndex: number
-  totalQuestions: number
-}
+import { getSubjects, startInterview, submitAnswer } from './api'
+import { ActiveInterviewCard } from './components/ActiveInterviewCard'
+import { FeedbackCard } from './components/FeedbackCard'
+import { ReportCard } from './components/ReportCard'
+import { SubjectPickerCard } from './components/SubjectPickerCard'
+import type { InterviewState, LoadState, ReportCardItem } from './types'
 
 export default function App() {
   const [subjectsState, setSubjectsState] = useState<LoadState>('idle')
@@ -56,10 +15,14 @@ export default function App() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [selectedSubjectId, setSelectedSubjectId] = useState<SubjectId | null>(null)
 
+  const [questionCountText, setQuestionCountText] = useState('5')
+
   const [startState, setStartState] = useState<LoadState>('idle')
   const [startError, setStartError] = useState<string | null>(null)
 
   const [interview, setInterview] = useState<InterviewState | null>(null)
+
+  const [reportCard, setReportCard] = useState<ReportCardItem[]>([])
 
   const [answerText, setAnswerText] = useState('')
   const [submitState, setSubmitState] = useState<LoadState>('idle')
@@ -74,9 +37,9 @@ export default function App() {
       setSubjectsError(null)
 
       try {
-        const data = await fetchJson<{ subjects: Subject[] }>(apiUrl('/api/subjects'))
+        const data = await getSubjects()
         if (cancelled) return
-        setSubjects(data.subjects)
+        setSubjects(data)
         setSubjectsState('success')
       } catch (err) {
         if (cancelled) return
@@ -98,14 +61,17 @@ export default function App() {
     setSubmitError(null)
     setLastFeedback(null)
     setAnswerText('')
+    setReportCard([])
 
     try {
-      const payload: StartInterviewRequest = { subjectId, questionCount: 5 }
-      const data = await fetchJson<StartInterviewResponse>(apiUrl('/api/interviews/start'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+      const parsedCount = Number(questionCountText)
+      const questionCount = Number.isFinite(parsedCount) && parsedCount > 0 ? Math.floor(parsedCount) : undefined
+
+      const payload: StartInterviewRequest = {
+        subjectId,
+        ...(questionCount !== undefined ? { questionCount } : {}),
+      }
+      const data = await startInterview(payload)
 
       setInterview({
         interviewId: data.interviewId,
@@ -137,16 +103,18 @@ export default function App() {
         answerText,
       }
 
-      const data = await fetchJson<SubmitAnswerResponse>(
-        apiUrl(`/api/interviews/${encodeURIComponent(interview.interviewId)}/answer`),
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        },
-      )
+      const data = await submitAnswer(interview.interviewId, payload)
 
       setLastFeedback(data)
+
+      setReportCard((prev) => [
+        ...prev,
+        {
+          questionIndex: data.questionIndex,
+          totalQuestions: data.totalQuestions,
+          review: data.review,
+        },
+      ])
 
       if (data.done) {
         setInterview(null)
@@ -167,10 +135,6 @@ export default function App() {
     }
   }
 
-  const progressValue = interview
-    ? Math.round(((interview.questionIndex - 1) / Math.max(1, interview.totalQuestions)) * 100)
-    : 0
-
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Stack spacing={2}>
@@ -183,139 +147,40 @@ export default function App() {
           </Typography>
         </Box>
 
-        <Card variant="outlined">
-          <CardContent>
-            <Stack spacing={2}>
-              <Typography variant="h6" fontWeight={700}>
-                Choose a subject
-              </Typography>
-
-              {subjectsState === 'loading' && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <CircularProgress size={20} />
-                  <Typography variant="body2">Loading subjects…</Typography>
-                </Box>
-              )}
-
-              {subjectsState === 'error' && subjectsError && (
-                <Alert severity="error">{subjectsError}</Alert>
-              )}
-
-              {subjectsState === 'success' && (
-                <List disablePadding>
-                  {subjects.map((s) => (
-                    <ListItemButton
-                      key={s.id}
-                      selected={selectedSubjectId === s.id}
-                      disabled={startState === 'loading' || submitState === 'loading'}
-                      onClick={() => handleStartInterview(s.id)}
-                    >
-                      <ListItemText primary={s.name} secondary={s.id} />
-                    </ListItemButton>
-                  ))}
-                </List>
-              )}
-
-              {startState === 'error' && startError && <Alert severity="error">{startError}</Alert>}
-              {startState === 'loading' && <LinearProgress />}
-            </Stack>
-          </CardContent>
-        </Card>
+        <SubjectPickerCard
+          subjectsState={subjectsState}
+          subjectsError={subjectsError}
+          subjects={subjects}
+          selectedSubjectId={selectedSubjectId}
+          disabled={startState === 'loading' || submitState === 'loading'}
+          questionCountText={questionCountText}
+          onQuestionCountTextChange={setQuestionCountText}
+          startState={startState}
+          startError={startError}
+          onStartInterview={handleStartInterview}
+        />
 
         {interview && (
-          <Card variant="outlined">
-            <CardContent>
-              <Stack spacing={2}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-                  <Box>
-                    <Typography variant="h6" fontWeight={700}>
-                      Question {interview.questionIndex} of {interview.totalQuestions}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Interview ID: {interview.interviewId}
-                    </Typography>
-                  </Box>
-
-                  <Button
-                    variant="text"
-                    disabled={submitState === 'loading'}
-                    onClick={() => {
-                      setInterview(null)
-                      setLastFeedback(null)
-                      setAnswerText('')
-                      setSubmitError(null)
-                      setSubmitState('idle')
-                    }}
-                  >
-                    End interview
-                  </Button>
-                </Box>
-
-                <LinearProgress variant="determinate" value={progressValue} />
-
-                <Typography variant="body1" fontWeight={700}>
-                  {interview.question.questionText}
-                </Typography>
-
-                <TextField
-                  label="Your answer"
-                  multiline
-                  minRows={6}
-                  value={answerText}
-                  onChange={(e) => setAnswerText(e.target.value)}
-                  disabled={submitState === 'loading'}
-                  fullWidth
-                />
-
-                {submitError && <Alert severity="error">{submitError}</Alert>}
-
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                  <Button
-                    variant="contained"
-                    onClick={handleSubmitAnswer}
-                    disabled={submitState === 'loading'}
-                  >
-                    Submit
-                  </Button>
-                  {submitState === 'loading' && <CircularProgress size={20} />}
-                </Box>
-              </Stack>
-            </CardContent>
-          </Card>
+          <ActiveInterviewCard
+            interview={interview}
+            answerText={answerText}
+            onAnswerTextChange={setAnswerText}
+            submitState={submitState}
+            submitError={submitError}
+            onSubmit={handleSubmitAnswer}
+            onEndInterview={() => {
+              setInterview(null)
+              setLastFeedback(null)
+              setAnswerText('')
+              setSubmitError(null)
+              setSubmitState('idle')
+            }}
+          />
         )}
 
-        {lastFeedback && (
-          <Card variant="outlined">
-            <CardContent>
-              <Stack spacing={1.5}>
-                <Typography variant="h6" fontWeight={700}>
-                  Feedback
-                </Typography>
+        {lastFeedback && <FeedbackCard lastFeedback={lastFeedback} />}
 
-                <Box sx={{ display: 'flex', gap: 2, alignItems: 'baseline' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Score
-                  </Typography>
-                  <Typography variant="h5" fontWeight={800}>
-                    {lastFeedback.evaluation.score} / 10
-                  </Typography>
-                </Box>
-
-                <Divider />
-
-                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                  {lastFeedback.evaluation.feedback}
-                </Typography>
-
-                {lastFeedback.done && (
-                  <Alert severity="success">
-                    Interview complete. Select a subject above to start a new one.
-                  </Alert>
-                )}
-              </Stack>
-            </CardContent>
-          </Card>
-        )}
+        {lastFeedback?.done && reportCard.length > 0 && <ReportCard reportCard={reportCard} />}
       </Stack>
     </Container>
   )

@@ -26,6 +26,10 @@ export type PublicQuestion = {
 export type EvaluationResult = {
   score: number;
   feedback: string;
+  strengths?: string[];
+  keyPointsExpected?: string[];
+  keyPointsCovered?: string[];
+  keyPointsMissing?: string[];
 };
 
 export type StartInterviewRequest = {
@@ -45,8 +49,16 @@ export type SubmitAnswerRequest = {
   answerText: string;
 };
 
+export type AnswerReview = {
+  question: PublicQuestion;
+  userAnswer: string;
+  referenceAnswer: string;
+  evaluation: EvaluationResult;
+};
+
 export type SubmitAnswerResponse = {
   evaluation: EvaluationResult;
+  review: AnswerReview;
   done: boolean;
   nextQuestion?: PublicQuestion;
   questionIndex: number;

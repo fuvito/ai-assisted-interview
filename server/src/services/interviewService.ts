@@ -119,7 +119,14 @@ export async function submitAnswer(interviewId: string, req: SubmitAnswerRequest
   }
 
   const question = await getQuestionById(expectedQuestionId);
-  const evaluation = evaluateAnswer(req.answerText, question.expertAnswer);
+  const evaluation = await evaluateAnswer(req.answerText, question.expertAnswer, question.questionText);
+
+  const review = {
+    question: toPublicQuestion(question),
+    userAnswer: req.answerText,
+    referenceAnswer: question.expertAnswer,
+    evaluation,
+  };
 
   await saveInterviewAnswer({
     interviewId: interview.id,
@@ -141,6 +148,7 @@ export async function submitAnswer(interviewId: string, req: SubmitAnswerRequest
   if (done) {
     return {
       evaluation,
+      review,
       done: true,
       questionIndex: interview.totalQuestions,
       totalQuestions: interview.totalQuestions,
@@ -152,6 +160,7 @@ export async function submitAnswer(interviewId: string, req: SubmitAnswerRequest
 
   return {
     evaluation,
+    review,
     done: false,
     nextQuestion: toPublicQuestion(nextQuestion),
     questionIndex: nextIndex + 1,
