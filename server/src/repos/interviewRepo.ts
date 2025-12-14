@@ -31,7 +31,7 @@ export async function createInterview(subjectId: SubjectId, totalQuestions: numb
 
   const { data, error } = await supabase
     .from("interviews")
-    .insert({ subject_id: subjectId, total_questions: totalQuestions, current_index: 0, status: "active" })
+    .insert({ subject_id: subjectId, total_questions: totalQuestions, current_index: 0, status: "in_progress" })
     .select("id,subject_id,total_questions,current_index,status")
     .single();
 
@@ -140,9 +140,11 @@ export async function updateInterviewProgress(params: {
   const supabase = getSupabaseClient();
   if (!supabase) throw httpError(500, "Missing SUPABASE_URL and SUPABASE_KEY");
 
+  const dbStatus = params.status === "active" ? "in_progress" : "completed";
+
   const { error } = await supabase
     .from("interviews")
-    .update({ current_index: params.currentIndex, status: params.status })
+    .update({ current_index: params.currentIndex, status: dbStatus })
     .eq("id", params.interviewId);
 
   if (error) throw httpError(500, error.message);
