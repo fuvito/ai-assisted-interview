@@ -30,7 +30,11 @@ export function ReportCard({ reportCard }: Props) {
 
           <Stack spacing={2}>
             {reportCard.map((item) => (
-              <Card key={`${item.review.question.id}-${item.questionIndex}`} variant="outlined">
+              <Card
+                key={`${item.review.question.id}-${item.questionIndex}`}
+                variant="outlined"
+                sx={{ boxShadow: 'none' }}
+              >
                 <CardContent>
                   <Stack spacing={1.5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>

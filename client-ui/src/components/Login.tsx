@@ -30,19 +30,19 @@ export function Login(props: Props) {
   } = props
 
   return (
-    <Container maxWidth="sm" sx={{ py: 6 }}>
-      <Card variant="outlined">
+    <Container maxWidth="sm" sx={{ py: { xs: 4, sm: 6 } }}>
+      <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2.5, sm: 3 }, bgcolor: 'background.default' }}>
+          <Typography variant="h5" fontWeight={800}>
+            {mode === 'sign_up' ? 'Create account' : 'Welcome back'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {mode === 'sign_up' ? 'Create an account to access the dashboard.' : 'Sign in to access the dashboard.'}
+          </Typography>
+        </Box>
+
         <CardContent>
           <Stack spacing={2}>
-            <Box>
-              <Typography variant="h5" fontWeight={800}>
-                Sign in
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Log in to access the dashboard.
-              </Typography>
-            </Box>
-
             {error && <Alert severity="error">{error}</Alert>}
 
             <TextField
@@ -72,7 +72,7 @@ export function Login(props: Props) {
                 onClick={() => onModeChange(mode === 'sign_in' ? 'sign_up' : 'sign_in')}
                 disabled={busy}
               >
-                {mode === 'sign_in' ? 'Create account' : 'Back to sign in'}
+                {mode === 'sign_in' ? 'Create account instead' : 'Back to sign in'}
               </Button>
             </Box>
           </Stack>

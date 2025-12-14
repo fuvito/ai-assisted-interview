@@ -20,21 +20,20 @@ type Props = {
 
 export function Dashboard({ subjectsState, subjectsError, subjects, onStartMockInterview }: Props) {
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      <Stack spacing={2}>
-        <Box>
-          <Typography variant="h4" fontWeight={800}>
-            Dashboard
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Pick a subject to start a mock interview. You will receive scoring, feedback, and a report card.
-          </Typography>
-        </Box>
-
-        <Card variant="outlined">
+    <Container maxWidth="md" sx={{ py: { xs: 4, sm: 6 } }}>
+      <Stack spacing={2.5}>
+        <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+          <Box sx={{ px: { xs: 2.5, sm: 4 }, py: { xs: 2.5, sm: 3 }, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
+            <Typography variant="h4" fontWeight={900}>
+              Dashboard
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+              Pick a subject to start an interview and get detailed feedback.
+            </Typography>
+          </Box>
           <CardContent>
-            <Stack spacing={1}>
-              <Typography variant="h6" fontWeight={700}>
+            <Stack spacing={0.5}>
+              <Typography variant="subtitle1" fontWeight={800}>
                 Subjects
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -74,7 +73,7 @@ export function Dashboard({ subjectsState, subjectsError, subjects, onStartMockI
               <Card key={s.id} variant="outlined">
                 <CardActionArea onClick={() => onStartMockInterview(s.id)}>
                   <CardContent>
-                    <Stack spacing={1}>
+                    <Stack spacing={0.75}>
                       <Typography variant="h6" fontWeight={800}>
                         {s.name}
                       </Typography>
@@ -83,7 +82,7 @@ export function Dashboard({ subjectsState, subjectsError, subjects, onStartMockI
                       </Typography>
 
                       <Typography variant="body2" color="text.secondary">
-                        Click to start mock interview
+                        Start interview
                       </Typography>
                     </Stack>
                   </CardContent>
