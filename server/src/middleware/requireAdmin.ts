@@ -16,10 +16,16 @@ export async function requireAdmin(req: Request, res: Response, next: NextFuncti
     if (!supabase) return res.status(500).json({ error: "Missing SUPABASE_URL and SUPABASE_KEY" });
 
     const token = getBearerToken(req);
-    if (!token) return res.status(401).json({ error: "Missing Authorization Bearer token" });
+    if (!token || token === "undefined" || token === "null") {
+      return res.status(401).json({ error: "Missing Authorization Bearer token" });
+    }
 
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData?.user) return res.status(401).json({ error: "Invalid or expired token" });
+    if (userError || !userData?.user) {
+      return res.status(401).json({
+        error: userError?.message || "Invalid or expired token",
+      });
+    }
 
     const userId = userData.user.id;
 

@@ -21,9 +21,9 @@ app.use(
 app.use(express.json());
 
 app.use(healthRouter);
+app.use("/api/admin", requireAdmin, adminQuestionsRouter);
 app.use("/api", requireAuth, contentRouter);
 app.use("/api/interviews", requireAuth, interviewRouter);
-app.use("/api/admin", requireAdmin, adminQuestionsRouter);
 
 const port = process.env.PORT ? Number(process.env.PORT) : 3001;
 app.listen(port, () => {
